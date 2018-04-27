@@ -1,5 +1,3 @@
-clc;clear;close all;
-
 % Read signal
 [signal, fs] = audioread('signal-extra025.wav');
 L = length(signal);
@@ -23,7 +21,8 @@ fc1 = 36000;
 fc2 = 83000;
 fc3 = 111000;
 fc4 = 150000;
-t_axis = linspace(0, 19.5, L);
+
+t_axis = linspace(0, L/fs, L)';
 
 
 [B, A] = butter(10, [fc1 - bandwidth/2, fc1 + bandwidth/2]/(fs/2));
@@ -34,6 +33,7 @@ y2 = filter(B, A, signal);
 y3 = filter(B, A, signal);
 [B, A] = butter(10, [fc4 - bandwidth/2, fc4 + bandwidth/2]/(fs/2));
 y4 = filter(B, A, signal);
+
 
 subplot(4, 1, 1);
 plot(t_axis, y1);
@@ -54,7 +54,7 @@ pause;
 % after fc is fc1 => 36000 hz
 
 % I will use xcorr to get the time delay
-[corr, lags] = xcorr(y1);
+[corr, lags] = xcorr(ytest);
 corr = corr(lags > 0);
 lags = lags(lags > 0);
 subplot(1, 1, 1);
@@ -86,32 +86,31 @@ pause;
 
 %%
 % I-komponent
-i_c = cos(2*pi*fc1*t_axis + 0.8)';
+i_c = cos(2*pi*fc1*t_axis + 1.2);
+q_c = sin(2*pi*fc1*t_axis + 1.2);
 x_i = 2*y.*i_c;
+x_q = 2*y.*q_c;
 
 f_xi = fft(x_i);
 plot(freq_axis, abs(f_xi(1:L/2)))
 xlabel('Frekvens');
-
-%% MÅSTE FILTREAR BORT DEN HÖGA HÄR
+pause;
 
 %%
-[B, A] = butter(10, 40000/(fs/2), 'low');
+[B, A] = butter(10, 20000/(fs/2), 'low');
 yi = filter(B, A, x_i);
-i = decimate(yi, 4);
-soundsc(i)
+
+f_yi = fft(yi);
+plot(freq_axis, abs(f_yi(1:L/2)))
+xlabel('Frekvens');
+pause;
+
+yq = -filter(B, A, x_q);
+i = decimate(yi, 10);
+soundsc(i, fs/10)
 pause; 
 clear sound;
 
-
-%%
-y_i = filter(B, A, 2*y.*i_carrier);
-
-% play it
-i = decimate(y_i, 4);
-q = decimate(y_q, 4);
-soundsc(i, fs/4);
-pause;
 
 
 
